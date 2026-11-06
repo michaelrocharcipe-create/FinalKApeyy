@@ -59,9 +59,9 @@
     <style>
         @media print {
             body * { visibility: hidden !important; }
-            #receiptModal:not(.hidden), #receiptModal:not(.hidden) * { visibility: visible !important; }
-            #receiptModal:not(.hidden) { position: static !important; display: block !important; overflow: visible !important; background: white !important; padding: 0 !important; }
-            #receiptModal:not(.hidden) > div { max-width: none !important; box-shadow: none !important; }
+            body.admin-print-mode #receiptModal:not(.hidden), body.admin-print-mode #receiptModal:not(.hidden) * { visibility: visible !important; }
+            body.admin-print-mode #receiptModal:not(.hidden) { position: static !important; display: block !important; overflow: visible !important; background: white !important; padding: 0 !important; }
+            body.admin-print-mode #receiptModal:not(.hidden) > div { max-width: none !important; box-shadow: none !important; }
             .no-print { display: none !important; }
         }
         .menu-card { transition: transform .18s ease, box-shadow .18s ease; }
@@ -1296,6 +1296,7 @@
         }
 
         function openReceipt(order) {
+            const canPrintReceipt = currentUser?.roleKey === 'admin';
             const receipt = document.getElementById('receiptContent');
             receipt.replaceChildren();
             const title = document.createElement('h2');
@@ -1324,6 +1325,8 @@
             total.className = 'flex justify-between font-bold';
             total.innerHTML = `<span>Total</span><span>${formatPrice(order.total)}</span>`;
             receipt.append(title, metadata, customer, lines, total);
+            document.getElementById('printReceipt').classList.toggle('hidden', !canPrintReceipt);
+            document.body.classList.toggle('admin-print-mode', canPrintReceipt);
             document.getElementById('receiptModal').classList.remove('hidden');
         }
 
@@ -1862,10 +1865,16 @@
 
         document.getElementById('closeReceipt').addEventListener('click', () => {
             document.getElementById('receiptModal').classList.add('hidden');
+            document.body.classList.remove('admin-print-mode');
         });
-        document.getElementById('printReceipt').addEventListener('click', () => window.print());
+        document.getElementById('printReceipt').addEventListener('click', () => {
+            if (currentUser?.roleKey === 'admin') window.print();
+        });
         document.getElementById('receiptModal').addEventListener('click', (event) => {
-            if (event.target.id === 'receiptModal') event.currentTarget.classList.add('hidden');
+            if (event.target.id === 'receiptModal') {
+                event.currentTarget.classList.add('hidden');
+                document.body.classList.remove('admin-print-mode');
+            }
         });
         document.getElementById('refreshCustomerOrders').addEventListener('click', renderCustomerOrders);
         document.getElementById('refreshSeatBookings').addEventListener('click', refreshRoleViews);
